@@ -2,6 +2,8 @@ from flask import Flask, jsonify, render_template_string
 import os
 import time
 from lumaai import LumaAI
+import requests
+import json
 
 # Set the auth token from environment variable
 auth_token = os.environ.get("LUMA_AUTH_TOKEN")
@@ -14,26 +16,33 @@ def home():
 
 @app.route('/generate', methods=['GET'])  # Define a route for video generation
 def generate():
-    generation = client.generations.create(
-        prompt="A teddy bear in sunglasses playing electric guitar and dancing",
-    )
-    
-    video_id = generation.id  # Get the generation ID
-    print(video_id)
+    url = "https://api.lumalabs.ai/dream-machine/v1/generations"
+    headers = {
+        'accept': 'application/json',
+        'authorization': 'Bearer luma-4ddd7418-c15f-4bc9-ad91-14bf52bef1e8-5f250147-e74e-409c-9969-4ecd6c740087',  # Replace with your actual token
+        'content-type': 'application/json',
+    }
+    data = {
+        "prompt": "an old lady laughing underwater, wearing a scuba diving suit"
+    }
 
-    # Polling for the video generation to complete
+    response = requests.post(url, headers=headers, data=json.dumps(data))
+    id = response.json()['id']
+
+
+    print("Response:", response.json())
+
+
     while True:
-        video_generation = client.generations.get(id=video_id)
-        
-        # Check if the assets are available
-        if video_generation.assets is not None:
+        response = requests.get(f"{url}/{id}", headers=headers)
+        response = response.json()
+        print(response['state'])
+        if response["state"] == 'completed':
             break
-        
-        # Optionally: Implement a timeout to prevent infinite loops
-        time.sleep(2)  # Wait for a couple of seconds before checking again
+        time.sleep(2)
 
     # Access the video URL
-    video_url = video_generation.assets.video if video_generation.assets.video else None
+    video_url = response['assets']['video']
 
     return render_template_string("""
     <!doctype html>
@@ -59,6 +68,3 @@ def generate():
 
 if __name__ == '__main__':
     app.run(debug=True)
-
-print("Auth Token:", auth_token)
-print(video_id)
