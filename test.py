@@ -23,7 +23,7 @@ def generate():
         'content-type': 'application/json',
     }
     data = {
-        "prompt": "an old lady laughing underwater, wearing a scuba diving suit"
+        "prompt": "In a quiet town, a lonely boy found a stray puppy, turning their shared loneliness into an unbreakable friendship."
     }
 
     response = requests.post(url, headers=headers, data=json.dumps(data))
